@@ -4,10 +4,9 @@
 
 Happl3 is a tool to apply a series of PowerShell or Bash/Zsh shell commands from a plan file. The plan is a text file containing a list of commands to be executed in sequence. The tool will execute the commands in the plan in a user-controlled manner and log the output to a file. The tool will also track the status of each command in the plan and allow the user to re-run failed commands.
 
-## Parameters
+## Requirements
 
-- **PlanFile**: The file containing the migration plan (required)
-- **LogFile**: The file containing the log output (default to `<PlanFile>.log`)
+- Python 3 or later
 
 ## Installation
 
@@ -17,22 +16,28 @@ To install `happl3` to your system, use the following command:
 pip install .
 ```
 
+This will install `happl3` and its dependencies. You can then run `happl3` from the command line.
+
+## Parameters
+
+- **PlanFile**: The file containing the migration plan (required)
+- **LogFile**: The file containing the log output (default to `<PlanFile>.log`)
+
 ## Usage
 
 ```bash
-python3 happl3 <PlanFile> [LogFile]
+
+# If installed via pip:
+happl3 <PlanFile> [LogFile]
+
+# Using python:
+python -m happl3 <PlanFile> [LogFile]
 
 # Examples:
-python3 happl3 test.sh test.log
-python3 happl3 test.sh
-python3 happl3  # Displays a program description and usage example.
+happl3 test.sh test.log
+happl3 test.sh
+happl3  # Displays a program description and usage example.
 ```
-
-This will install `happl3` and its dependencies. You can then run `happl3` from the command line.
-
-## Requirements
-
-- Python 3 or later
 
 ## User Interface
 

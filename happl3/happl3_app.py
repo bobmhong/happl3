@@ -28,7 +28,7 @@ class Happl3:
     def display_help(self):
         help_message = """
         Usage:
-            python3 ./happl3.py <PlanFile> [LogFile]
+            happl3 <PlanFile> [LogFile]
 
         Parameters:
             PlanFile: The file containing the migration plan (required)
