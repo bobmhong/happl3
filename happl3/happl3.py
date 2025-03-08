@@ -11,7 +11,7 @@
 import argparse
 import curses
 import hashlib
-from happl3_app import Happl3
+from happl3.happl3_app import Happl3
 
 def hash_command(command):
     return hashlib.md5(command.encode()).hexdigest()

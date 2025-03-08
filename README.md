@@ -9,16 +9,26 @@ Happl3 is a tool to apply a series of PowerShell or Bash/Zsh shell commands from
 - **PlanFile**: The file containing the migration plan (required)
 - **LogFile**: The file containing the log output (default to `<PlanFile>.log`)
 
+## Installation
+
+To install `happl3` to your system, use the following command:
+
+```bash
+pip install .
+```
+
 ## Usage
 
 ```bash
-python3 ./happl3.py <PlanFile> [LogFile]
+python3 happl3 <PlanFile> [LogFile]
 
 # Examples:
-python3 ./happl3.py test.sh test.log
-python3 ./happl3.py test.sh
-python3 ./happl3.py  # Displays a program description and usage example.
+python3 happl3 test.sh test.log
+python3 happl3 test.sh
+python3 happl3  # Displays a program description and usage example.
 ```
+
+This will install `happl3` and its dependencies. You can then run `happl3` from the command line.
 
 ## Requirements
 

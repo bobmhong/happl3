@@ -5,7 +5,7 @@ import json
 import sys
 import locale  # Add this import
 from datetime import datetime
-from happl3_utils import hash_command
+from .happl3_utils import hash_command  # Update this import
 
 class Happl3:
     def __init__(self, plan_file=None, log_file=None):
