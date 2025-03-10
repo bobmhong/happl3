@@ -1,5 +1,7 @@
-echo hi
-echo there
+echo "Starting now!"
+firstName=Larry
+lastName=David
+echo "Hello $firstName $lastName"
 echo Thing 1
 #---------------------------------------------------------------
 echo Thing 2

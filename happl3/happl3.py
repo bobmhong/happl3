@@ -1,20 +1,9 @@
 #!/usr/bin/env python3
 
-# Happl3 - The happy script applier
-
-## Description
-
-# Happl3 is a tool to apply a series of powershell or bash/zsh shell commands from a plan file.
-
-# The plan is a text file containing a list of commands to be executed in sequence. The tool will execute the commands in the plan in a user-controlled manner and log the output to a file. The tool will also track the status of each command in the plan and allow the user to re-run failed commands.
-
 import argparse
 import curses
-import hashlib
 from happl3.happl3_app import Happl3
-
-def hash_command(command):
-    return hashlib.md5(command.encode()).hexdigest()
+from happl3.happl3_pwsh import Happl3Pwsh
 
 def main():
     parser = argparse.ArgumentParser(description="Happl3 - The happy script applier")
@@ -28,7 +17,15 @@ def main():
 
     log_file = args.LogFile if args.LogFile else f"{args.PlanFile}.log"
     app = Happl3(args.PlanFile, log_file)
-    curses.wrapper(app.run)
+    
+    # Initialize Happl3Pwsh instance
+    app.pwsh_session = Happl3Pwsh()
+    
+    try:
+        curses.wrapper(app.run)
+    finally:
+        # Close Happl3Pwsh session when app quits
+        app.pwsh_session.close_session()
 
 if __name__ == "__main__":
     main()

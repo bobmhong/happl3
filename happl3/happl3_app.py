@@ -1,11 +1,13 @@
 import curses
-import subprocess
 import os
 import json
 import sys
-import locale  # Add this import
+import locale
+import select
 from datetime import datetime
-from .happl3_utils import hash_command  # Update this import
+import subprocess
+from .happl3_utils import hash_command
+from .happl3_pwsh import Happl3Pwsh
 
 class Happl3:
     def __init__(self, plan_file=None, log_file=None):
@@ -24,6 +26,7 @@ class Happl3:
         self.focus = "preview"
         self.load_plan()
         self.load_index()
+        self.pwsh_session = None  # Initialize pwsh_session attribute
 
     def display_help(self):
         help_message = """
@@ -176,6 +179,12 @@ class Happl3:
         separator_row = cmd_height + 2
         out_height = self.max_y - cmd_height - 4
 
+        # Check if the terminal window is large enough
+        if self.max_y < 10 or self.max_x < 40:
+            self.stdscr.addstr(0, 0, "Terminal window is too small. Please resize.", curses.color_pair(8))
+            self.stdscr.refresh()
+            return
+
         # Draw application title
         title = "Happl3 - The Happy Command Applier"
         self.stdscr.addstr(0, 0, title, curses.color_pair(7) | curses.A_BOLD)
@@ -274,7 +283,7 @@ class Happl3:
         shell = "pwsh" if self.plan_file.endswith('.ps1') else "bash"
         executed = False
         selected_count = sum(1 for i in range(len(self.commands)) if self.index_data[str(i)]["selected"])
-    
+
         # Move highlight to the first selected row
         for i in range(len(self.commands)):
             if self.index_data[str(i)]["selected"]:
@@ -291,15 +300,17 @@ class Happl3:
                     log.write(f"\n[{datetime.now()}] > {self.commands[current_index]}\n")
                     try:
                         if shell == "pwsh":
-                            result = subprocess.run(["pwsh", "-Command", self.commands[current_index]], 
-                                                    capture_output=True, text=True)
+                            if self.pwsh_session is None:
+                                self.pwsh_session = Happl3Pwsh()
+                            result = self.pwsh_session.run_command(self.commands[current_index])
+                            log.write(result + "\n")
+                            new_status = "success"
                         else:
-                            result = subprocess.run(self.commands[current_index], shell=True, 
-                                                    capture_output=True, text=True)
-                        log.write(result.stdout)
-                        if result.stderr:
-                            log.write(f"ERROR: {result.stderr}\n")
-                        new_status = "success" if result.returncode == 0 else "failed"
+                            result = subprocess.run(self.commands[current_index], shell=True, capture_output=True, text=True)
+                            log.write(result.stdout)
+                            if result.stderr:
+                                log.write(f"ERROR: {result.stderr}\n")
+                            new_status = "success" if result.returncode == 0 else "failed"
                         status_emoji = "✔" if new_status == "success" else "✖"
                         log.write(f"{status_emoji} {new_status.upper()}\n")
                         self.index_data[str(current_index)]["status"] = new_status
