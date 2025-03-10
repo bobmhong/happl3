@@ -299,8 +299,11 @@ class Happl3:
             if self.index_data[str(current_index)]["selected"] and not self.commands[current_index].startswith('#'):
                 hash_key = hash_command(self.commands[current_index])
 
-                # save the current status for the command at the current_index
-                current_index_status = self.index_data[str(current_index)]["status"]
+                # save the current status for the command at the current_index or unknown if index not found
+                if str(current_index) in self.index_data:
+                    current_index_status = self.index_data[str(current_index)]["status"]
+                else:
+                    current_index_status = "pending"
 
                 with open(self.log_file, 'a') as log:
                     log.write(f"\n[{datetime.now()}] > {self.commands[current_index]}\n")
@@ -315,7 +318,7 @@ class Happl3:
                         self.index_data[str(current_index)]["status"] = new_status
                         self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
                     except subprocess.CalledProcessError as e:
-                        log.write(f"✖ FAILED: {str(e)}\n")
+                        log.write(f"✖ FAILED: {str(e.stderr)}\n")
                         self.index_data[str(current_index)]["status"] = "failed"
                         self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
                         executed = True

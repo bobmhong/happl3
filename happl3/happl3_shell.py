@@ -1,6 +1,8 @@
 import subprocess
 import platform
 import os
+import select
+
 
 class Happl3Shell:
     def __init__(self, shell_type="pwsh"):
@@ -16,7 +18,8 @@ class Happl3Shell:
 
     def start_session(self):
         self.process = subprocess.Popen(
-            [self.shell_executable, "-NoExit", "-Command", "-"] if self.shell_type == "pwsh" else [self.shell_executable],
+            [self.shell_executable, "-NoExit", "-Command",
+                "-"] if self.shell_type == "pwsh" else [self.shell_executable],
             stdin=subprocess.PIPE,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
@@ -31,25 +34,39 @@ class Happl3Shell:
             marked_command = f'{command}\necho "OUTPUT_COMPLETE_MARKER"\n'
         self.process.stdin.write(marked_command)
         self.process.stdin.flush()
-        
-        output_lines = []
 
-        # Check for the process return code
+        output_lines = []
+        error_lines = []
+
+        process_outputs=True
+        while process_outputs:
+            reads = [self.process.stderr, self.process.stdout]
+            readable, _, _ = select.select(reads, [], [])
+
+            for r in readable:
+                if r is self.process.stderr:
+                    err_line = r.readline()
+                    if err_line == '':
+                        process_outputs=False
+                        break
+                    if err_line:
+                        error_lines.append(err_line.strip())
+                        break                    
+                elif r is self.process.stdout:
+                    line = r.readline()
+                    if "OUTPUT_COMPLETE_MARKER" in line:
+                        process_outputs=False
+                        break
+                    if line:
+                        output_lines.append(line.strip())                
+
+            # Check for the process return code
         return_code = self.process.poll()
         if return_code:
-            raise subprocess.CalledProcessError(return_code, command, output="\n".join(output_lines))
+            raise subprocess.CalledProcessError(return_code, command, output="\n".join(
+                output_lines), stderr="\n".join(error_lines))
 
-        # Read the output until we hit the marker
-
-        while True:
-            line = self.process.stdout.readline()
-            if "OUTPUT_COMPLETE_MARKER" in line:
-                break
-            if line:
-                output_lines.append(line.strip())
-
-        
-
+        # Return the output if all commands were successful
         return "\n".join(output_lines)
 
     def close_session(self):
@@ -57,6 +74,7 @@ class Happl3Shell:
             self.process.stdin.write("exit\n")
         self.process.stdin.flush()
         self.process.terminate()
+
 
 def run_shell_commands(commands, shell_type="pwsh"):
     shell_session = Happl3Shell(shell_type)
