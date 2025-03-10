@@ -7,7 +7,7 @@ import select
 from datetime import datetime
 import subprocess
 from .happl3_utils import hash_command
-from .happl3_pwsh import Happl3Pwsh
+from .happl3_shell import Happl3Shell
 
 class Happl3:
     def __init__(self, plan_file=None, log_file=None):
@@ -26,7 +26,7 @@ class Happl3:
         self.focus = "preview"
         self.load_plan()
         self.load_index()
-        self.pwsh_session = None  # Initialize pwsh_session attribute
+        self.shell_session = None  # Initialize shell_session attribute
 
     def display_help(self):
         help_message = """
@@ -155,6 +155,8 @@ class Happl3:
                             break
                         if self.is_pending(i):
                             self.index_data[str(i)]["selected"] = True
+                elif key == ord('r'):
+                    self.reset_files()
                 elif key == curses.KEY_ENTER or key == 10 or key == 13:
                     self.execute_selected()
             elif self.focus == "log":
@@ -224,7 +226,7 @@ class Happl3:
                         break
 
         # Draw navigation status bar
-        help_text = "↑↓:navigate Space:select Enter:run a:all n:none p:pending b:block f:failed Tab:switch H/E:top/bottom  q:quit"
+        help_text = "↑↓:navigate Space:select Enter:run a:all n:none p:pending b:block f:failed r:reset Tab:switch H/E:top/bottom  q:quit"
         self.stdscr.addstr(cmd_height + 1, 1, help_text[:self.max_x-2], curses.color_pair(3))
 
         # Draw row counter and plan file name in the lower right corner of the preview pane
@@ -299,18 +301,11 @@ class Happl3:
                 with open(self.log_file, 'a') as log:
                     log.write(f"\n[{datetime.now()}] > {self.commands[current_index]}\n")
                     try:
-                        if shell == "pwsh":
-                            if self.pwsh_session is None:
-                                self.pwsh_session = Happl3Pwsh()
-                            result = self.pwsh_session.run_command(self.commands[current_index])
-                            log.write(result + "\n")
-                            new_status = "success"
-                        else:
-                            result = subprocess.run(self.commands[current_index], shell=True, capture_output=True, text=True)
-                            log.write(result.stdout)
-                            if result.stderr:
-                                log.write(f"ERROR: {result.stderr}\n")
-                            new_status = "success" if result.returncode == 0 else "failed"
+                        if self.shell_session is None:
+                            self.shell_session = Happl3Shell(shell)
+                        result = self.shell_session.run_command(self.commands[current_index])
+                        log.write(result + "\n")
+                        new_status = "success"
                         status_emoji = "✔" if new_status == "success" else "✖"
                         log.write(f"{status_emoji} {new_status.upper()}\n")
                         self.index_data[str(current_index)]["status"] = new_status
@@ -351,4 +346,21 @@ class Happl3:
                     self.highlight = self.find_next_pending(self.highlight)
 
         if executed:
+            self.draw()
+
+    def reset_files(self):
+        self.stdscr.clear()
+        self.stdscr.addstr(0, 0, "Are you sure you want to reset the log and index file? (Y/N): ", curses.color_pair(8))
+        self.stdscr.refresh()
+        key = self.stdscr.getch()
+        if key == ord('Y') or key == ord('y'):
+            os.rename(self.log_file, f"{self.log_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
+            os.rename(self.index_file, f"{self.index_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
+            with open(self.log_file, 'w') as log:
+                log.write(f"[{datetime.now()}] Log file reset\n")
+            self.index_data = {}
+            self.save_index()
+            self.load_index()
+            self.draw()
+        else:
             self.draw()

@@ -3,7 +3,7 @@
 import argparse
 import curses
 from happl3.happl3_app import Happl3
-from happl3.happl3_pwsh import Happl3Pwsh
+from happl3.happl3_shell import Happl3Shell
 
 def main():
     parser = argparse.ArgumentParser(description="Happl3 - The happy script applier")
@@ -18,14 +18,15 @@ def main():
     log_file = args.LogFile if args.LogFile else f"{args.PlanFile}.log"
     app = Happl3(args.PlanFile, log_file)
     
-    # Initialize Happl3Pwsh instance
-    app.pwsh_session = Happl3Pwsh()
+    # Initialize Happl3Shell instance
+    shell_type = "pwsh" if args.PlanFile.endswith('.ps1') else "bash"
+    app.shell_session = Happl3Shell(shell_type)
     
     try:
         curses.wrapper(app.run)
     finally:
-        # Close Happl3Pwsh session when app quits
-        app.pwsh_session.close_session()
+        # Close Happl3Shell session when app quits
+        app.shell_session.close_session()
 
 if __name__ == "__main__":
     main()
