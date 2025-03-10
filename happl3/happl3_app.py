@@ -9,12 +9,13 @@ import subprocess
 from .happl3_utils import hash_command
 from .happl3_shell import Happl3Shell
 
+
 class Happl3:
     def __init__(self, plan_file=None, log_file=None):
         if plan_file is None:
             self.display_help()
             sys.exit(1)
-        
+
         self.plan_file = plan_file
         self.log_file = log_file if log_file else f"{plan_file}.log"
         self.index_file = f"{plan_file}.index"
@@ -47,9 +48,11 @@ class Happl3:
 
     def load_plan(self):
         with open(self.plan_file, 'r') as f:
-            self.commands = [line.strip() for line in f.readlines() if line.strip()]
+            self.commands = [line.strip()
+                             for line in f.readlines() if line.strip()]
         with open(self.log_file, 'a') as log:
-            log.write(f"[{datetime.now()}] Loaded {len(self.commands)} commands from {self.plan_file}\n")
+            log.write(
+                f"[{datetime.now()}] Loaded {len(self.commands)} commands from {self.plan_file}\n")
 
     def load_index(self):
         if os.path.exists(self.index_file):
@@ -57,7 +60,7 @@ class Happl3:
                 self.index_data = json.load(f)
         else:
             self.index_data = {}
-        
+
         # Ensure all commands have an entry in the index data
         for i, cmd in enumerate(self.commands):
             if str(i) not in self.index_data:
@@ -101,10 +104,14 @@ class Happl3:
         self.stdscr = stdscr
         curses.start_color()
         curses.use_default_colors()
-        curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Normal text
-        curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)  # Highlight
-        curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)   # Status bar
-        curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK) # Separator
+        curses.init_pair(1, curses.COLOR_WHITE,
+                         curses.COLOR_BLACK)  # Normal text
+        curses.init_pair(2, curses.COLOR_BLACK,
+                         curses.COLOR_WHITE)  # Highlight
+        curses.init_pair(3, curses.COLOR_CYAN,
+                         curses.COLOR_BLACK)   # Status bar
+        curses.init_pair(4, curses.COLOR_YELLOW,
+                         curses.COLOR_BLACK)  # Separator
         curses.init_pair(5, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Comments
         curses.init_pair(6, curses.COLOR_BLUE, curses.COLOR_BLACK)   # Border
         curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Title
@@ -113,7 +120,8 @@ class Happl3:
 
         self.max_y, self.max_x = stdscr.getmaxyx()
         with open(self.log_file, 'a') as log:
-            log.write(f"Terminal size: {self.max_y} rows × {self.max_x} cols\n")
+            log.write(
+                f"Terminal size: {self.max_y} rows × {self.max_x} cols\n")
 
         while True:
             self.draw()
@@ -133,7 +141,8 @@ class Happl3:
                     self.highlight = len(self.commands) - 1
                 elif key == ord(' '):
                     if not self.commands[self.highlight].startswith('#'):
-                        self.index_data[str(self.highlight)]["selected"] = not self.index_data[str(self.highlight)]["selected"]
+                        self.index_data[str(self.highlight)]["selected"] = not self.index_data[str(
+                            self.highlight)]["selected"]
                     if self.highlight < len(self.commands) - 1:
                         self.highlight += 1
                 elif key == ord('a'):
@@ -145,10 +154,12 @@ class Happl3:
                         self.index_data[str(i)]["selected"] = False
                 elif key == ord('p'):
                     for i in range(len(self.commands)):
-                        self.index_data[str(i)]["selected"] = self.is_pending(i)
+                        self.index_data[str(
+                            i)]["selected"] = self.is_pending(i)
                 elif key == ord('f'):
                     for i in range(len(self.commands)):
-                        self.index_data[str(i)]["selected"] = self.index_data[str(i)]["status"] == "failed"
+                        self.index_data[str(i)]["selected"] = self.index_data[str(
+                            i)]["status"] == "failed"
                 elif key == ord('b'):
                     for i in range(self.highlight, len(self.commands)):
                         if self.commands[i].startswith('#'):
@@ -163,7 +174,8 @@ class Happl3:
                 if os.path.exists(self.log_file):
                     with open(self.log_file, 'r') as f:
                         lines = f.readlines()
-                    max_scroll = max(0, len(lines) - (self.max_y - (self.max_y - 1) // 2 - 2))
+                    max_scroll = max(
+                        0, len(lines) - (self.max_y - (self.max_y - 1) // 2 - 2))
                     if key == curses.KEY_UP and self.log_scroll_offset > 0:
                         self.log_scroll_offset -= 1
                     elif key == curses.KEY_DOWN and self.log_scroll_offset < max_scroll:
@@ -183,7 +195,8 @@ class Happl3:
 
         # Check if the terminal window is large enough
         if self.max_y < 10 or self.max_x < 40:
-            self.stdscr.addstr(0, 0, "Terminal window is too small. Please resize.", curses.color_pair(8))
+            self.stdscr.addstr(
+                0, 0, "Terminal window is too small. Please resize.", curses.color_pair(8))
             self.stdscr.refresh()
             return
 
@@ -193,25 +206,29 @@ class Happl3:
 
         # Draw command pane
         visible_lines = cmd_height - 1  # Adjust for navigation status bar
-        self.scroll_offset = max(0, min(self.highlight - visible_lines // 2, 
-                                      len(self.commands) - visible_lines))
+        self.scroll_offset = max(0, min(self.highlight - visible_lines // 2,
+                                        len(self.commands) - visible_lines))
 
         if not self.commands:
-            self.stdscr.addstr(2, 1, "No commands loaded", curses.color_pair(1))
+            self.stdscr.addstr(2, 1, "No commands loaded",
+                               curses.color_pair(1))
         else:
-            for i in range(self.scroll_offset, 
-                         min(self.scroll_offset + visible_lines, len(self.commands))):
+            for i in range(self.scroll_offset,
+                           min(self.scroll_offset + visible_lines, len(self.commands))):
                 cmd = self.commands[i]
                 index = str(i)
-                status = self.index_data[index]["status"] if not cmd.startswith('#') else ""
+                status = self.index_data[index]["status"] if not cmd.startswith(
+                    '#') else ""
                 selected = self.index_data[index]["selected"]
-                select_display = '[x]' if selected else '[ ]' if not cmd.startswith('#') else '   '
+                select_display = '[x]' if selected else '[ ]' if not cmd.startswith(
+                    '#') else '   '
                 status_emoji = {
                     "success": "✔",  # Checkmark
                     "failed": "✖",   # Cross
                     "pending": "⌛"   # Hourglass
                 }.get(status, "")
-                line = f"{i + 1:3} {select_display} {status_emoji:<2} {cmd[:self.max_x-25]}".ljust(self.max_x - 2)
+                line = f"{i + 1:3} {select_display} {status_emoji:<2} {cmd[:self.max_x-25]}".ljust(
+                    self.max_x - 2)
                 row = i - self.scroll_offset + 2
                 if 0 <= row < cmd_height + 1:
                     try:
@@ -227,11 +244,13 @@ class Happl3:
 
         # Draw navigation status bar
         help_text = "↑↓:navigate Space:select Enter:run a:all n:none p:pending b:block f:failed r:reset Tab:switch H/E:top/bottom  q:quit"
-        self.stdscr.addstr(cmd_height + 1, 1, help_text[:self.max_x-2], curses.color_pair(3))
+        self.stdscr.addstr(cmd_height + 1, 1,
+                           help_text[:self.max_x-2], curses.color_pair(3))
 
         # Draw row counter and plan file name in the lower right corner of the preview pane
         preview_row_counter = f"{self.plan_file} | Row {self.highlight + 1}/{len(self.commands)}"
-        self.stdscr.addstr(cmd_height + 1, self.max_x - len(preview_row_counter) - 2, preview_row_counter, curses.color_pair(3))
+        self.stdscr.addstr(cmd_height + 1, self.max_x - len(preview_row_counter) -
+                           2, preview_row_counter, curses.color_pair(3))
 
         # Draw thick separator
         separator = "═" * (self.max_x - 2)
@@ -248,33 +267,41 @@ class Happl3:
                     row = separator_row + 1 + i
                     if row < self.max_y - 2:
                         try:
-                            attr = curses.color_pair(8) if "ERROR:" in line or "EXCEPTION:" in line else curses.color_pair(1)
-                            self.stdscr.addstr(row, 1, line.encode('utf-8').rstrip(), attr)
+                            attr = curses.color_pair(
+                                8) if "ERROR:" in line or "EXCEPTION:" in line else curses.color_pair(1)
+                            self.stdscr.addstr(
+                                row, 1, line.encode('utf-8').rstrip(), attr)
                         except curses.error:
                             break
 
         # Draw row number counter and log file name in the lower right corner of the log pane
         log_row_counter = f"{self.log_file} | Row {self.log_scroll_offset + 1}/{len(lines)}"
-        self.stdscr.addstr(self.max_y - 2, self.max_x - len(log_row_counter) - 2, log_row_counter, curses.color_pair(3))
+        self.stdscr.addstr(self.max_y - 2, self.max_x -
+                           len(log_row_counter) - 2, log_row_counter, curses.color_pair(3))
 
         # Draw single line blue border around the perimeter of each pane
         for y in range(1, self.max_y - 1):
             try:
                 self.stdscr.addch(y, 0, curses.ACS_VLINE, curses.color_pair(6))
-                self.stdscr.addch(y, self.max_x - 1, curses.ACS_VLINE, curses.color_pair(6))
+                self.stdscr.addch(y, self.max_x - 1,
+                                  curses.ACS_VLINE, curses.color_pair(6))
             except curses.error:
                 pass
         for x in range(self.max_x):
             try:
                 self.stdscr.addch(1, x, curses.ACS_HLINE, curses.color_pair(6))
-                self.stdscr.addch(self.max_y - 1, x, curses.ACS_HLINE, curses.color_pair(6))
+                self.stdscr.addch(self.max_y - 1, x,
+                                  curses.ACS_HLINE, curses.color_pair(6))
             except curses.error:
                 pass
         try:
             self.stdscr.addch(1, 0, curses.ACS_ULCORNER, curses.color_pair(6))
-            self.stdscr.addch(1, self.max_x - 1, curses.ACS_URCORNER, curses.color_pair(6))
-            self.stdscr.addch(self.max_y - 1, 0, curses.ACS_LLCORNER, curses.color_pair(6))
-            self.stdscr.addch(self.max_y - 1, self.max_x - 1, curses.ACS_LRCORNER, curses.color_pair(6))
+            self.stdscr.addch(1, self.max_x - 1,
+                              curses.ACS_URCORNER, curses.color_pair(6))
+            self.stdscr.addch(self.max_y - 1, 0,
+                              curses.ACS_LLCORNER, curses.color_pair(6))
+            self.stdscr.addch(self.max_y - 1, self.max_x - 1,
+                              curses.ACS_LRCORNER, curses.color_pair(6))
         except curses.error:
             pass
 
@@ -284,7 +311,8 @@ class Happl3:
     def execute_selected(self):
         shell = "pwsh" if self.plan_file.endswith('.ps1') else "bash"
         executed = False
-        selected_count = sum(1 for i in range(len(self.commands)) if self.index_data[str(i)]["selected"])
+        selected_count = sum(1 for i in range(
+            len(self.commands)) if self.index_data[str(i)]["selected"])
 
         # Move highlight to the first selected row
         for i in range(len(self.commands)):
@@ -301,39 +329,54 @@ class Happl3:
 
                 # save the current status for the command at the current_index or unknown if index not found
                 if str(current_index) in self.index_data:
-                    current_index_status = self.index_data[str(current_index)]["status"]
+                    current_index_status = self.index_data[str(
+                        current_index)]["status"]
                 else:
                     current_index_status = "pending"
 
                 with open(self.log_file, 'a') as log:
-                    log.write(f"\n[{datetime.now()}] > {self.commands[current_index]}\n")
+                    log.write(
+                        f"\n[{datetime.now()}] > {self.commands[current_index]}\n")
                     try:
                         if self.shell_session is None:
                             self.shell_session = Happl3Shell(shell)
-                        result = self.shell_session.run_command(self.commands[current_index])
+                        result = self.shell_session.run_command(
+                            self.commands[current_index])
                         log.write(result + "\n")
                         new_status = "success"
                         status_emoji = "✔" if new_status == "success" else "✖"
                         log.write(f"{status_emoji} {new_status.upper()}\n")
-                        self.index_data[str(current_index)]["status"] = new_status
-                        self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
+                        self.index_data[str(current_index)
+                                        ]["status"] = new_status
+                        self.index_data[str(
+                            current_index)]["update_timestamp"] = datetime.now().isoformat()
+                        # Clear the selection after a command is successful
+                        self.index_data[str(current_index)]["selected"] = False
                     except subprocess.CalledProcessError as e:
                         log.write(f"✖ FAILED: {str(e.stderr)}\n")
-                        self.index_data[str(current_index)]["status"] = "failed"
-                        self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
-                        executed = True
-                        error_occurred = True                        
-                    except Exception as e:
-                        log.write(f"✖ ERROR: {str(e)}\n")
-                        self.index_data[str(current_index)]["status"] = "failed"
-                        self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
+                        self.index_data[str(current_index)
+                                        ]["status"] = "failed"
+                        self.index_data[str(
+                            current_index)]["update_timestamp"] = datetime.now().isoformat()
                         executed = True
                         error_occurred = True
-            
+                        # Restart Shell Session in the event of an error
+                        self.shell_session.restart_session()
+                    except Exception as e:
+                        log.write(f"✖ ERROR: {str(e)}\n")
+                        self.index_data[str(current_index)
+                                        ]["status"] = "failed"
+                        self.index_data[str(
+                            current_index)]["update_timestamp"] = datetime.now().isoformat()
+                        executed = True
+                        error_occurred = True
+                        # Restart Shell Session in the event of an error
+                        self.shell_session.restart_session()
+
             # if self.index_data.status changed, save the index
             if self.index_data[str(current_index)]["status"] != current_index_status:
                 self.save_index()
-            
+
             current_index += 1
 
             # Move highlight to the next selected row or next pending row if no more selected rows
@@ -349,22 +392,29 @@ class Happl3:
             else:
                 # Had an error, so stop execution
                 break
-    
+
         if executed:
             self.draw()
 
+        # Ensure the screen is synced with the index after commands are done executing
+        self.draw()
+
     def reset_files(self):
         height, width = 7, 54
-        start_y, start_x = (self.max_y - height) // 2, (self.max_x - width) // 2
+        start_y, start_x = (
+            self.max_y - height) // 2, (self.max_x - width) // 2
         win = curses.newwin(height, width, start_y, start_x)
         win.bkgd(' ', curses.color_pair(1))
         win.box()
-        win.addstr(2, 2, "Are you sure you want to reset the log and index file? (Y/N): ", curses.color_pair(8))
+        win.addstr(
+            2, 2, "Are you sure you want to reset the log and index file? (Y/N): ", curses.color_pair(8))
         win.refresh()
         key = win.getch()
         if key == ord('Y') or key == ord('y'):
-            os.rename(self.log_file, f"{self.log_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
-            os.rename(self.index_file, f"{self.index_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
+            os.rename(
+                self.log_file, f"{self.log_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
+            os.rename(
+                self.index_file, f"{self.index_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
             with open(self.log_file, 'w') as log:
                 log.write(f"[{datetime.now()}] Log file reset\n")
             self.index_data = {}

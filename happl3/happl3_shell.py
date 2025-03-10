@@ -27,6 +27,11 @@ class Happl3Shell:
             env=self.env
         )
 
+    # Restart Shell Session in the event of an error
+    def restart_session(self):
+        self.close_session()
+        self.start_session()
+
     def run_command(self, command):
         if self.shell_type == "pwsh":
             marked_command = f'{command}; if ($?) {{ Write-Output "OUTPUT_COMPLETE_MARKER" }} else {{ Write-Output "OUTPUT_COMPLETE_MARKER"; exit 1 }}\n'
@@ -38,7 +43,7 @@ class Happl3Shell:
         output_lines = []
         error_lines = []
 
-        process_outputs=True
+        process_outputs = True
         while process_outputs:
             reads = [self.process.stderr, self.process.stdout]
             readable, _, _ = select.select(reads, [], [])
@@ -47,18 +52,18 @@ class Happl3Shell:
                 if r is self.process.stderr:
                     err_line = r.readline()
                     if err_line == '':
-                        process_outputs=False
+                        process_outputs = False
                         break
                     if err_line:
                         error_lines.append(err_line.strip())
-                        break                    
+                        break
                 elif r is self.process.stdout:
                     line = r.readline()
                     if "OUTPUT_COMPLETE_MARKER" in line:
-                        process_outputs=False
+                        process_outputs = False
                         break
                     if line:
-                        output_lines.append(line.strip())                
+                        output_lines.append(line.strip())
 
             # Check for the process return code
         return_code = self.process.poll()
@@ -66,14 +71,24 @@ class Happl3Shell:
             raise subprocess.CalledProcessError(return_code, command, output="\n".join(
                 output_lines), stderr="\n".join(error_lines))
 
+        # Clear the checkmark after successful command execution
+        if self.shell_type == "pwsh":
+            self.process.stdin.write("Clear-Host\n")
+        else:
+            self.process.stdin.write("clear\n")
+        self.process.stdin.flush()
+
         # Return the output if all commands were successful
         return "\n".join(output_lines)
 
     def close_session(self):
-        if self.shell_type == "pwsh":
-            self.process.stdin.write("exit\n")
-        self.process.stdin.flush()
-        self.process.terminate()
+        try:
+            if self.shell_type == "pwsh":
+                self.process.stdin.write("exit\n")
+            self.process.stdin.flush()
+            self.process.terminate()
+        except Exception as e:
+            print(f"Error closing session: {e}")
 
 
 def run_shell_commands(commands, shell_type="pwsh"):
