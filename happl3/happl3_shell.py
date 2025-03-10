@@ -31,8 +31,16 @@ class Happl3Shell:
             marked_command = f'{command}\necho "OUTPUT_COMPLETE_MARKER"\n'
         self.process.stdin.write(marked_command)
         self.process.stdin.flush()
-
+        
         output_lines = []
+
+        # Check for the process return code
+        return_code = self.process.poll()
+        if return_code:
+            raise subprocess.CalledProcessError(return_code, command, output="\n".join(output_lines))
+
+        # Read the output until we hit the marker
+
         while True:
             line = self.process.stdout.readline()
             if "OUTPUT_COMPLETE_MARKER" in line:
@@ -40,9 +48,7 @@ class Happl3Shell:
             if line:
                 output_lines.append(line.strip())
 
-        return_code = self.process.poll()
-        if return_code:
-            raise subprocess.CalledProcessError(return_code, command, output="\n".join(output_lines))
+        
 
         return "\n".join(output_lines)
 

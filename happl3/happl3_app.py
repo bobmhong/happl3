@@ -298,6 +298,10 @@ class Happl3:
         while current_index < len(self.commands):
             if self.index_data[str(current_index)]["selected"] and not self.commands[current_index].startswith('#'):
                 hash_key = hash_command(self.commands[current_index])
+
+                # save the current status for the command at the current_index
+                current_index_status = self.index_data[str(current_index)]["status"]
+
                 with open(self.log_file, 'a') as log:
                     log.write(f"\n[{datetime.now()}] > {self.commands[current_index]}\n")
                     try:
@@ -310,28 +314,23 @@ class Happl3:
                         log.write(f"{status_emoji} {new_status.upper()}\n")
                         self.index_data[str(current_index)]["status"] = new_status
                         self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
-                        if new_status == "success":
-                            self.index_data[str(current_index)]["selected"] = False
-                        executed = True
-                        if new_status == "failed":
-                            error_occurred = True
-                            break
                     except subprocess.CalledProcessError as e:
-                        log.write(f"✖ ERROR: CalledProcessError: {str(e)}\n")
+                        log.write(f"✖ FAILED: {str(e)}\n")
                         self.index_data[str(current_index)]["status"] = "failed"
                         self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
                         executed = True
-                        error_occurred = True
-                        break
+                        error_occurred = True                        
                     except Exception as e:
-                        log.write(f"✖ ERROR: EXCEPTION: {str(e)}\n")
+                        log.write(f"✖ ERROR: {str(e)}\n")
                         self.index_data[str(current_index)]["status"] = "failed"
                         self.index_data[str(current_index)]["update_timestamp"] = datetime.now().isoformat()
                         executed = True
                         error_occurred = True
-                        break
+            
+            # if self.index_data.status changed, save the index
+            if self.index_data[str(current_index)]["status"] != current_index_status:
                 self.save_index()
-                self.draw()  # Redraw to update the status emojis
+            
             current_index += 1
 
             # Move highlight to the next selected row or next pending row if no more selected rows
@@ -344,7 +343,10 @@ class Happl3:
                 else:
                     # start looking for next pending at the current_index
                     self.highlight = self.find_next_pending(self.highlight)
-
+            else:
+                # Had an error, so stop execution
+                break
+    
         if executed:
             self.draw()
 
