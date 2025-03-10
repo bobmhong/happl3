@@ -349,10 +349,14 @@ class Happl3:
             self.draw()
 
     def reset_files(self):
-        self.stdscr.clear()
-        self.stdscr.addstr(0, 0, "Are you sure you want to reset the log and index file? (Y/N): ", curses.color_pair(8))
-        self.stdscr.refresh()
-        key = self.stdscr.getch()
+        height, width = 7, 54
+        start_y, start_x = (self.max_y - height) // 2, (self.max_x - width) // 2
+        win = curses.newwin(height, width, start_y, start_x)
+        win.bkgd(' ', curses.color_pair(1))
+        win.box()
+        win.addstr(2, 2, "Are you sure you want to reset the log and index file? (Y/N): ", curses.color_pair(8))
+        win.refresh()
+        key = win.getch()
         if key == ord('Y') or key == ord('y'):
             os.rename(self.log_file, f"{self.log_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
             os.rename(self.index_file, f"{self.index_file}.bak{datetime.now().strftime('%Y%m%d%H%M%S')}")
@@ -361,6 +365,4 @@ class Happl3:
             self.index_data = {}
             self.save_index()
             self.load_index()
-            self.draw()
-        else:
-            self.draw()
+        self.draw()
