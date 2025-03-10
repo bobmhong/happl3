@@ -4,3 +4,5 @@ $last="David"
 $fullName="$first $last"
 # Print greeting
 Write-Host "Hello, $fullName!"
+blah - I am a bad command
+echo "Hello, World Again!"

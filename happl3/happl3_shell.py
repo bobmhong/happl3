@@ -26,7 +26,7 @@ class Happl3Shell:
 
     def run_command(self, command):
         if self.shell_type == "pwsh":
-            marked_command = f'{command}; Write-Output "OUTPUT_COMPLETE_MARKER"\n'
+            marked_command = f'{command}; if ($?) {{ Write-Output "OUTPUT_COMPLETE_MARKER" }} else {{ Write-Output "OUTPUT_COMPLETE_MARKER"; exit 1 }}\n'
         else:
             marked_command = f'{command}\necho "OUTPUT_COMPLETE_MARKER"\n'
         self.process.stdin.write(marked_command)
@@ -39,6 +39,10 @@ class Happl3Shell:
                 break
             if line:
                 output_lines.append(line.strip())
+
+        return_code = self.process.poll()
+        if return_code:
+            raise subprocess.CalledProcessError(return_code, command, output="\n".join(output_lines))
 
         return "\n".join(output_lines)
 
