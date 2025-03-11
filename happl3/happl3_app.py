@@ -49,11 +49,16 @@ class Happl3:
     # Load the plan file into the commands list. Each line is a command with the following exceptions:
     #   - If a line is empty or contains only whitespace, it is ignored.
     #   - If a line starts with a '#' character, it is considered a comment. It will be imported but not processed as a command.
-    
+    #   - Split lines that contain ; into separate commands
     def load_plan(self):
         with open(self.plan_file, 'r') as f:
-            self.commands = [line.strip()
-                             for line in f.readlines() if line.strip()]
+            lines = [line.strip() for line in f.readlines() if line.strip()]
+            self.commands = []
+            for line in lines:
+                if line.startswith('#'):
+                    self.commands.append(line)
+                else:
+                    self.commands.extend(line.split(';'))
         with open(self.log_file, 'a') as log:
             log.write(
                 f"[{datetime.now()}] Loaded {len(self.commands)} commands from {self.plan_file}\n")
