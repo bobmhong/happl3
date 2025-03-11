@@ -46,6 +46,10 @@ class Happl3:
         """
         print(help_message)
 
+    # Load the plan file into the commands list. Each line is a command with the following exceptions:
+    #   - If a line is empty or contains only whitespace, it is ignored.
+    #   - If a line starts with a '#' character, it is considered a comment. It will be imported but not processed as a command.
+    
     def load_plan(self):
         with open(self.plan_file, 'r') as f:
             self.commands = [line.strip()
@@ -227,7 +231,7 @@ class Happl3:
                     "failed": "✖",   # Cross
                     "pending": "⌛"   # Hourglass
                 }.get(status, "")
-                line = f"{i + 1:3} {select_display} {status_emoji:<2} {cmd[:self.max_x-25]}".ljust(
+                line = f"{i + 1:3} {select_display} {status_emoji:<2} {cmd}".ljust(
                     self.max_x - 2)
                 row = i - self.scroll_offset + 2
                 if 0 <= row < cmd_height + 1:
@@ -238,7 +242,10 @@ class Happl3:
                             attr = curses.color_pair(5)  # Green for comments
                         else:
                             attr = curses.color_pair(1)
-                        self.stdscr.addstr(row, 1, line.encode('utf-8'), attr)
+                        # Wrap long lines
+                        wrapped_lines = self.wrap_text(line, self.max_x - 2)
+                        for j, wrapped_line in enumerate(wrapped_lines):
+                            self.stdscr.addstr(row + j, 1, wrapped_line.encode('utf-8'), attr)
                     except curses.error:
                         break
 
@@ -269,8 +276,10 @@ class Happl3:
                         try:
                             attr = curses.color_pair(
                                 8) if "ERROR:" in line or "EXCEPTION:" in line else curses.color_pair(1)
-                            self.stdscr.addstr(
-                                row, 1, line.encode('utf-8').rstrip(), attr)
+                            # Wrap long lines
+                            wrapped_lines = self.wrap_text(line, self.max_x - 2)
+                            for j, wrapped_line in enumerate(wrapped_lines):
+                                self.stdscr.addstr(row + j, 1, wrapped_line.encode('utf-8').rstrip(), attr)
                         except curses.error:
                             break
 
@@ -307,6 +316,18 @@ class Happl3:
 
         self.stdscr.noutrefresh()
         curses.doupdate()
+
+    def wrap_text(self, text, width):
+        """Wrap text to fit within a given width."""
+        lines = []
+        while len(text) > width:
+            space_index = text.rfind(' ', 0, width)
+            if space_index == -1:
+                space_index = width
+            lines.append(text[:space_index])
+            text = text[space_index:].strip()
+        lines.append(text)
+        return lines
 
     def execute_selected(self):
         shell = "pwsh" if self.plan_file.endswith('.ps1') else "bash"

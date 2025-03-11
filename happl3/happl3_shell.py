@@ -43,31 +43,25 @@ class Happl3Shell:
         output_lines = []
         error_lines = []
 
-        process_outputs = True
-        while process_outputs:
-            reads = [self.process.stderr, self.process.stdout]
-            readable, _, _ = select.select(reads, [], [])
+        # Ensure all standard output is captured before proceeding
+        while self.process.stdout.readable():
+            line = self.process.stdout.readline()
+            if not line:
+                break
+            if line.strip() == "OUTPUT_COMPLETE_MARKER":
+                break
+            output_lines.append(line.strip())
 
-            for r in readable:
-                if r is self.process.stderr:
-                    err_line = r.readline()
-                    if err_line == '':
-                        process_outputs = False
-                        break
-                    if err_line:
-                        error_lines.append(err_line.strip())
-                        break
-                elif r is self.process.stdout:
-                    line = r.readline()
-                    if "OUTPUT_COMPLETE_MARKER" in line:
-                        process_outputs = False
-                        break
-                    if line:
-                        output_lines.append(line.strip())
-
-            # Check for the process return code
+        # Check for the process return code
         return_code = self.process.poll()
         if return_code:
+            # Ensure all standard output is captured before proceeding
+            while self.process.stderr.readable():
+                err_line = self.process.stderr.readline()
+                if not err_line:
+                    break
+                error_lines.append(err_line.strip())
+                
             raise subprocess.CalledProcessError(return_code, command, output="\n".join(
                 output_lines), stderr="\n".join(error_lines))
 
