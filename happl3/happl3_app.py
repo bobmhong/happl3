@@ -49,7 +49,7 @@ class Happl3:
     # Load the plan file into the commands list. Each line is a command with the following exceptions:
     #   - If a line is empty or contains only whitespace, it is ignored.
     #   - If a line starts with a '#' character, it is considered a comment. It will be imported but not processed as a command.
-    #   - Split lines that contain ; into separate commands
+    #   - Split lines that contain ; into separate commands;
     def load_plan(self):
         with open(self.plan_file, 'r') as f:
             lines = [line.strip() for line in f.readlines() if line.strip()]
@@ -58,7 +58,9 @@ class Happl3:
                 if line.startswith('#'):
                     self.commands.append(line)
                 else:
-                    self.commands.extend(line.split(';'))
+                    commands = line.split(';')
+                    for cmd in commands:
+                        self.commands.append(cmd)
         with open(self.log_file, 'a') as log:
             log.write(
                 f"[{datetime.now()}] Loaded {len(self.commands)} commands from {self.plan_file}\n")
@@ -351,7 +353,8 @@ class Happl3:
 
         while current_index < len(self.commands):
             if self.index_data[str(current_index)]["selected"] and not self.commands[current_index].startswith('#'):
-                hash_key = hash_command(self.commands[current_index])
+                current_command=self.commands[current_index]
+                hash_key = hash_command(current_command)
 
                 # save the current status for the command at the current_index or unknown if index not found
                 if str(current_index) in self.index_data:
@@ -367,7 +370,7 @@ class Happl3:
                         if self.shell_session is None:
                             self.shell_session = Happl3Shell(shell)
                         result = self.shell_session.run_command(
-                            self.commands[current_index])
+                            current_command)
                         log.write(result + "\n")
                         new_status = "success"
                         status_emoji = "✔" if new_status == "success" else "✖"
