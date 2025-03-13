@@ -115,18 +115,16 @@ class Happl3:
         self.stdscr = stdscr
         curses.start_color()
         curses.use_default_colors()
-        curses.init_pair(1, curses.COLOR_WHITE,
-                         curses.COLOR_BLACK)  # Normal text
-        curses.init_pair(2, curses.COLOR_BLACK,
-                         curses.COLOR_WHITE)  # Highlight
-        curses.init_pair(3, curses.COLOR_CYAN,
-                         curses.COLOR_BLACK)   # Status bar
-        curses.init_pair(4, curses.COLOR_YELLOW,
-                         curses.COLOR_BLACK)  # Separator
+        curses.init_pair(1, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Normal text
+        curses.init_pair(2, curses.COLOR_BLACK, curses.COLOR_WHITE)  # Highlight
+        curses.init_pair(3, curses.COLOR_CYAN, curses.COLOR_BLACK)   # Status bar
+        curses.init_pair(4, curses.COLOR_YELLOW, curses.COLOR_BLACK)  # Separator
         curses.init_pair(5, curses.COLOR_GREEN, curses.COLOR_BLACK)  # Comments
         curses.init_pair(6, curses.COLOR_BLUE, curses.COLOR_BLACK)   # Border
         curses.init_pair(7, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Title
         curses.init_pair(8, curses.COLOR_RED, curses.COLOR_BLACK)    # Error
+        curses.init_pair(9, curses.COLOR_WHITE, curses.COLOR_BLACK)  # Dimmed text
+        curses.init_pair(10, curses.COLOR_BLACK, curses.COLOR_BLACK) # Dimmed background    
         self.stdscr.bkgd(' ', curses.color_pair(1))
 
         self.max_y, self.max_x = stdscr.getmaxyx()
@@ -248,7 +246,7 @@ class Happl3:
                         elif cmd.startswith('#'):
                             attr = curses.color_pair(5)  # Green for comments
                         else:
-                            attr = curses.color_pair(1)
+                            attr = curses.color_pair(1) if self.focus == "preview" else curses.color_pair(10)
                         # Wrap long lines
                         wrapped_lines = self.wrap_text(line, self.max_x - 2)
                         for j, wrapped_line in enumerate(wrapped_lines):
@@ -283,6 +281,11 @@ class Happl3:
                         try:
                             attr = curses.color_pair(
                                 8) if "ERROR:" in line or "EXCEPTION:" in line else curses.color_pair(1)
+                            # Highlight the current row if focus is on log
+                            if self.focus == "log" and i == 0:
+                                attr = curses.color_pair(2)
+                            elif self.focus != "log":
+                                attr = curses.color_pair(10)
                             # Wrap long lines
                             wrapped_lines = self.wrap_text(line, self.max_x - 2)
                             for j, wrapped_line in enumerate(wrapped_lines):
